@@ -1,0 +1,55 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(12px + 1vmin);
+  color: white;
+}
+
+.App-footer {
+  background-color: #282c34;
+  min-height: 10vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(12px + 1vmin);
+  color: white;
+}
+
+.App-link {
+  color: #09d3ac;
+}
+
+.App-header .pagination {
+  display: inline-flex;
+}
+
+
+.App-header .page-link {
+  background-color: #454d55;
+  border-color: #95999c;
+  color: white;
+  outline-style: none;
+  box-shadow: none;
+}
+
+.App-header .page-item.active .page-link {
+  background-color: #95999c;
+  border-color: #95999c;
+  outline-style: none;
+  box-shadow: none;
+}
+
+a:focus {outline:0;}
