@@ -2,7 +2,11 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 # Live demo
 
-https://ipfs.io/ipfs/QmQkcvcjPHWrVKjw7xV3wkL9a7A77sUspNrgcFi2ANhp5S
+https://ipfs.io/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB
+
+
+###Supported url params
+- address
 
 ## Description
 

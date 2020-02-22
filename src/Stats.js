@@ -9,12 +9,25 @@ const web3 = new Web3(
     )
 );
 
-const currencyToAddress = {
+const ADDRESSES = {
     idai: '0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01',
     iusdc: '0xd6aD7a6750A7593E092a9B218d66C0A814a3436e',
     iusdt: '0x83f798e925BcD4017Eb265844FDDAbb448f1707D',
     itusd: '0x73a052500105205d34Daf004eAb301916DA8190f',
 };
+
+const CURVE = '0x45f783cce6b7ff23b2ab2d70e416cdb7d6055f51';
+const CURVE_TOKEN = '0xdf5e0e81dff6faf3a7e52ba697820c5e32d806a8';
+const TRANSFER_TOPIC =
+    '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+const BN = n => web3.utils.toBN(n.toString());
+
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
 class Stats extends Component {
     constructor(props) {
@@ -26,18 +39,22 @@ class Stats extends Component {
             availableUsd: 0,
             opacity: 0,
             calculated: false,
+            converters: null,
         };
     }
 
     async componentDidMount() {
         await this.connecting();
-        for (const currencyName of Object.keys(currencyToAddress)) {
+        await this.initConverters();
+        const usdDeposited = await this.getDeposits();
+
+        this.setState({
+            depositedUsd: usdDeposited,
+        });
+        for (const currencyName of Object.keys(ADDRESSES)) {
             const yToUsd = await this.getConverter(currencyName);
-            const usdDeposited = yToUsd(
-                await this.getDeposits(currencyToAddress[currencyName])
-            );
             const usdWithdrawn = yToUsd(
-                await this.getWithdrawals(currencyToAddress[currencyName])
+                await this.getWithdrawals(ADDRESSES[currencyName])
             );
 
             const withdrawableUsd = yToUsd(
@@ -45,7 +62,6 @@ class Stats extends Component {
             );
 
             this.setState({
-                depositedUsd: this.state.depositedUsd + usdDeposited,
                 withdrawnUsd: this.state.withdrawnUsd + usdWithdrawn,
                 availableUsd: this.state.availableUsd + withdrawableUsd,
             });
@@ -55,21 +71,52 @@ class Stats extends Component {
         });
     }
 
-    async getDeposits(address) {
-        const logs = await web3.eth.getPastLogs({
+    async getDeposits() {
+        const poolTokensReceivings = await web3.eth.getPastLogs({
             fromBlock: 9476468,
             toBlock: 'latest',
-            address,
+            address: CURVE_TOKEN,
             topics: [
-                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
-                '0x000000000000000000000000' +
-                    window.ethereum.selectedAddress.substr(2),
-                '0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51',
+                TRANSFER_TOPIC,
+                '0x000000000000000000000000' + ZERO_ADDR.substr(2),
+                '0x000000000000000000000000' + this.acc(),
             ],
         });
-        return logs.reduce(
-            (acc, val) => web3.utils.toBN(val.data).add(acc),
-            web3.utils.toBN('0')
+
+        const txs = poolTokensReceivings.map(e => e.transactionHash);
+
+        let depositUsdSum = 0;
+        for (const hash of txs) {
+            const { logs } = await web3.eth.getTransactionReceipt(hash);
+            for (const { address, topics, data } of logs) {
+                const tokenIndex = Object.values(ADDRESSES).indexOf(address);
+                if (
+                    tokenIndex !== -1 &&
+                    topics[0] === TRANSFER_TOPIC &&
+                    topics[2] === '0x000000000000000000000000' + CURVE.substr(2)
+                ) {
+                    const tokens = BN(data);
+                    const usd = this.yToUsd(
+                        tokens,
+                        Array.from(Object.keys(ADDRESSES))[tokenIndex]
+                    );
+                    depositUsdSum += usd;
+                }
+            }
+        }
+        return depositUsdSum;
+    }
+
+    acc() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let address = urlParams.get('address');
+        if (address) address = address.substr(2);
+        // return window.ethereum.selectedAddress.substr(2);
+        return (
+            address ||
+            (window.ethereum &&
+                window.ethereum.selectedAddress &&
+                window.ethereum.selectedAddress.substr(2))
         );
     }
 
@@ -113,9 +160,8 @@ class Stats extends Component {
             address,
             topics: [
                 '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
-                '0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51',
-                '0x000000000000000000000000' +
-                    window.ethereum.selectedAddress.substr(2),
+                '0x000000000000000000000000' + CURVE.substr(2),
+                '0x000000000000000000000000' + this.acc(),
             ],
         });
         return logs.reduce(
@@ -133,17 +179,14 @@ class Stats extends Component {
     }
 
     async yWithdrawable(curr) {
-        const tokenAddress = currencyToAddress[curr];
+        const tokenAddress = ADDRESSES[curr];
         const balanceOfCurveContract = await web3.eth.call({
             to: tokenAddress,
-            data:
-                '0x70a0823100000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51',
+            data: '0x70a08231000000000000000000000000' + CURVE.substr(2),
         });
         const poolTokensBalance = await web3.eth.call({
             to: '0xdf5e0e81dff6faf3a7e52ba697820c5e32d806a8',
-            data:
-                '0x70a08231000000000000000000000000' +
-                window.ethereum.selectedAddress.substr(2),
+            data: '0x70a08231000000000000000000000000' + this.acc(),
         });
         const poolTokensSupply = await web3.eth.call({
             to: '0xdf5e0e81dff6faf3a7e52ba697820c5e32d806a8',
@@ -155,13 +198,25 @@ class Stats extends Component {
             .div(web3.utils.toBN(poolTokensSupply));
     }
 
+    async initConverters() {
+        for (const tokenName of Object.keys(ADDRESSES)) {
+            const converter = await this.getConverter(tokenName);
+            this.setState({
+                converters: {
+                    ...this.state.converters,
+                    [tokenName]: converter,
+                },
+            });
+        }
+    }
+
     async getConverter(curr) {
         const usdPool = await web3.eth.call({
-            to: currencyToAddress[curr],
+            to: ADDRESSES[curr],
             data: '0x7137ef99',
         });
         const tokensSupply = await web3.eth.call({
-            to: currencyToAddress[curr],
+            to: ADDRESSES[curr],
             data: '0x18160ddd',
         });
         return value => {
@@ -173,6 +228,10 @@ class Stats extends Component {
                     .div(web3.utils.toBN(tokensSupply))
             );
         };
+    }
+
+    yToUsd(tokens, name) {
+        return this.state.converters[name](tokens);
     }
 
     render() {
@@ -189,13 +248,13 @@ class Stats extends Component {
             </h3>
         );
         const show = val =>
-            `${
+            `${numberWithCommas(
                 typeof val === 'string'
                     ? this.state[val].toFixed(2)
                     : val.toFixed(2)
-            } USD`;
+            )} USD`;
 
-        if (!window.ethereum) {
+        if (!window.ethereum && !this.acc()) {
             return (
                 <div>
                     {title}
@@ -212,7 +271,7 @@ class Stats extends Component {
                 </div>
             );
         }
-        if (!window.ethereum.selectedAddress)
+        if (!this.acc())
             return (
                 <div>
                     {title}
