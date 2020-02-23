@@ -2,10 +2,17 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 # Live demo
 
-https://ipfs.io/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB
+- https://ipfs.io/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
+- https://gateway.ipfs.io/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
+- https://ipfs.infura.io/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
+- https://ninetailed.ninja/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
+- https://ipfs.eternum.io/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
+- https://cloudflare-ipfs.com/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
+- https://ipfs.stibarc.com/ipfs/QmcuDAXeD1cGjhhtxaMCRR8hf9VARUC4eK78RnHCtV6TpB/
 
 
-###Supported url params
+
+### Supported url params
 - address
 
 ## Description
