@@ -27,8 +27,6 @@ function numberWithCommas(x) {
 
 const BN = n => web3.utils.toBN(n.toString());
 
-const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
-
 class Stats extends Component {
     constructor(props) {
         super(props);
@@ -78,7 +76,7 @@ class Stats extends Component {
             address: CURVE_TOKEN,
             topics: [
                 TRANSFER_TOPIC,
-                '0x000000000000000000000000' + ZERO_ADDR.substr(2),
+                [],
                 '0x000000000000000000000000' + this.acc(),
             ],
         });
